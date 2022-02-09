@@ -1,19 +1,6 @@
-:- dynamic(v/3).
-:- dynamic(iteration/1).
-
 :- initialization(initialize_vertices).
 
 iterations(52).
-
-% edge(from, to).
-edge(a, b).
-edge(a, c).
-edge(c, a).
-edge(c, b).
-edge(c, d).
-edge(d, c).
-edge(b, d).
-
 
 rank :-
     initialize_vertices,
@@ -33,10 +20,12 @@ rank(Iterations0, Iterations) :-
         v(prev, V, _, _),
         rank(V)
     ),
+    update_ranks,
     Iterations1 is Iterations0 + 1,
     rank(Iterations1, Iterations).
 
 initialize_vertices :-
+    load_files(['graph.pl']),
     retractall(v(_, _, _, _)),
     setof(X, Y^edge(X, Y), Xs),
     setof(Y, X^edge(X, Y), Ys),
@@ -69,8 +58,7 @@ rank(U) :-
     findall(V, incoming_vertex(U, V), IncomingVertices),
     sum_vertices(IncomingVertices, NewRank),
     v(prev, U, _, Outgoing),
-    assertz(v(curr, U, NewRank, Outgoing)),
-    update_ranks.
+    assertz(v(curr, U, NewRank, Outgoing)).
 
 sum_vertices(Vertices, Score) :-
     sum_vertices_(Vertices, 0, Score).
@@ -81,10 +69,6 @@ sum_vertices_([v(prev, _, Rank, N)|Rest], Score0, Score) :-
     Score1 is Score0 + VertexScore,
     sum_vertices_(Rest, Score1, Score).
 
-update_ranks :-
-    v(prev, V, _, _),
-    \+ v(curr, V, _, _),
-    !.
 update_ranks :-
     forall(
         v(curr, V, NewRank, N),
