@@ -1,5 +1,7 @@
 :- initialization(initialize_vertices).
 
+:- dynamic(total_vertices/1).
+
 iterations(52).
 
 rank :-
@@ -27,11 +29,13 @@ rank(Iterations0, Iterations) :-
 initialize_vertices :-
     load_files(['graph.pl']),
     retractall(v(_, _, _, _)),
+    retractall(total_vertices(_)),
     setof(X, Y^edge(X, Y), Xs),
     setof(Y, X^edge(X, Y), Ys),
     append(Xs, Ys, Vertices0),
     sort(Vertices0, Vertices),
     length(Vertices, N),
+    assertz(total_vertices(N)),
     Seed is 1 / N,
     forall(member(V, Vertices), initialize_score(V, Seed)).
 
@@ -44,7 +48,7 @@ outgoing_links(X, N) :-
     outgoing_links_(N0, N).
 
 outgoing_links_(0, N) :-
-    aggregate_all(count, v(prev, _, _, _), N0),
+    total_vertices(N0),
     N is N0 - 1,
     !.
 outgoing_links_(N, N).
