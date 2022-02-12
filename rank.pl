@@ -75,9 +75,8 @@ sum_vertices_([v(prev, _, Rank, N)|Rest], Score0, Score) :-
 
 update_ranks :-
     forall(
-        v(curr, V, NewRank, N),
-        (   retract(v(curr, V, _, _)),
-            retract(v(prev, V, _, _)),
+        retract(v(curr, V, NewRank, N)),
+        (   retract(v(prev, V, _, _)),
             assertz(v(prev, V, NewRank, N))
         )
     ).
