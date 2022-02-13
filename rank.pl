@@ -1,6 +1,7 @@
 :- initialization(initialize_vertices).
 
 :- dynamic(total_vertices/1).
+:- dynamic(v/4).
 
 iterations(52).
 
@@ -8,10 +9,8 @@ rank :-
     initialize_vertices,
     iterations(Iterations),
     rank(0, Iterations),
-    findall(v(prev, V, Rank, _), v(prev, V, Rank, _), Vs0),
-    sort(Vs0, Vs),
     forall(
-        member(v(prev, V, Rank, _), Vs),
+        v(prev, V, Rank, _),
         format('~a = ~w~n', [V, Rank])
     ).
 
@@ -30,14 +29,29 @@ initialize_vertices :-
     load_files(['graph.pl']),
     retractall(v(_, _, _, _)),
     retractall(total_vertices(_)),
-    setof(X, Y^edge(X, Y), Xs),
-    setof(Y, X^edge(X, Y), Ys),
-    append(Xs, Ys, Vertices0),
-    sort(Vertices0, Vertices),
-    length(Vertices, N),
+    forall(
+        edge(X, Y),
+        initialize_vertex(edge(X, Y))
+    ),
+    aggregate_all(count, v(prev, _, _, _), N),
     assertz(total_vertices(N)),
     Seed is 1 / N,
-    forall(member(V, Vertices), initialize_score(V, Seed)).
+    forall(
+        v(prev, V, _, _),
+        (   retract(v(prev, V, _, _)),
+            initialize_score(V, Seed)
+        )
+    ).
+
+initialize_vertex(edge(X, Y)) :-
+    (   \+ v(prev, X, _, _)
+    ->  initialize_score(X, 0)
+    ;   true
+    ),
+    (   \+ v(prev, Y, _, _)
+    ->  initialize_score(Y, 0)
+    ;   true
+    ).
 
 initialize_score(V, Seed) :-
     outgoing_links(V, N),
@@ -59,19 +73,16 @@ incoming_vertex(U, v(prev, V, Score, N)) :-
 
 % The rank of U, is the sum of all ranks of V linking to U, divided by the number of links from V.
 rank(U) :-
-    findall(V, incoming_vertex(U, V), IncomingVertices),
-    sum_vertices(IncomingVertices, NewRank),
+    T = total(0),
+    forall(incoming_vertex(U, V), add_vertex_rank(T, V)),
+    T = total(NewRank),
     v(prev, U, _, Outgoing),
     assertz(v(curr, U, NewRank, Outgoing)).
 
-sum_vertices(Vertices, Score) :-
-    sum_vertices_(Vertices, 0, Score).
-
-sum_vertices_([], Score, Score).
-sum_vertices_([v(prev, _, Rank, N)|Rest], Score0, Score) :-
-    VertexScore is Rank / N,
-    Score1 is Score0 + VertexScore,
-    sum_vertices_(Rest, Score1, Score).
+add_vertex_rank(Total, v(prev, _, Rank, N)) :-
+    Total = total(T),
+    Score is T + Rank / N,
+    nb_setarg(1, Total, Score).
 
 update_ranks :-
     forall(
