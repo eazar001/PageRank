@@ -43,11 +43,11 @@ initialize_vertices :-
 
 initialize_vertex(edge(X, Y)) :-
     (   \+ v(prev, X, _, _)
-    ->  initialize_score(X, 0)
+    ->  assertz(v(prev, X, _, _))
     ;   true
     ),
     (   \+ v(prev, Y, _, _)
-    ->  initialize_score(Y, 0)
+    ->  assertz(v(prev, Y, _, _))
     ;   true
     ).
 
