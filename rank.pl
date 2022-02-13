@@ -37,10 +37,8 @@ initialize_vertices :-
     assertz(total_vertices(N)),
     Seed is 1 / N,
     forall(
-        v(prev, V, _, _),
-        (   retract(v(prev, V, _, _)),
-            initialize_score(V, Seed)
-        )
+        retract(v(prev, V, _, _)),
+        initialize_score(V, Seed)
     ).
 
 initialize_vertex(edge(X, Y)) :-
@@ -74,7 +72,10 @@ incoming_vertex(U, v(prev, V, Score, N)) :-
 % The rank of U, is the sum of all ranks of V linking to U, divided by the number of links from V.
 rank(U) :-
     T = total(0),
-    forall(incoming_vertex(U, V), add_vertex_rank(T, V)),
+    forall(
+        incoming_vertex(U, V),
+        add_vertex_rank(T, V)
+    ),
     T = total(NewRank),
     v(prev, U, _, Outgoing),
     assertz(v(curr, U, NewRank, Outgoing)).
